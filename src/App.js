@@ -13,7 +13,7 @@ export default function App() {
     <div className="mainContainer">
       <div className="dataContainer">
         <div className="header">
-           <span role="img">👋</span> Hey there!
+           <span role="img" aria-label="Wave">👋</span> Hey there!
         </div>
 
         <div className="bio">
