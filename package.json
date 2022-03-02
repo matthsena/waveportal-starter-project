@@ -5,10 +5,16 @@
   "dependencies": {
     "@emotion/react": "^11.8.1",
     "@emotion/styled": "^11.8.1",
+    "@nomiclabs/hardhat-ethers": "^2.0.5",
+    "@nomiclabs/hardhat-waffle": "^2.0.3",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
+    "chai": "^4.3.6",
+    "dotenv": "^16.0.0",
+    "ethereum-waffle": "^3.4.0",
     "ethers": "^5.4.4",
+    "hardhat": "^2.9.0",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "react-scripts": "3.2.0"
@@ -17,7 +23,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby"
   },
   "eslintConfig": {
     "extends": "react-app"
