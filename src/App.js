@@ -1,14 +1,57 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ethers } from "ethers";
 import './App.css';
 import { Button } from "./components/Button";
+import { Input } from './components/Input';
 import abi from "./utils/WavePortal.json";
 
 export default function App() {
+  const [allWaves, setAllWaves] = useState([]);
   const [currentAccount, setCurrentAccount] = useState("")
+  const [totalWaves, setTotalWaves] = useState(0)
+  const [msg, setMsg] = useState("")
 
-  const contractAddress = "0x30416c8724D6bb1D355e0315b08256d94Ce07431"
+  const contractAddress = "0xD44E2313f0A75189E15D01Fba371115844Bbbf2B"
   const contractABI = abi.abi;
+
+  const getAllWaves = useCallback(async () => {
+    try {
+      const { ethereum } = window;
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+
+        /*
+         * Call the getAllWaves method from your Smart Contract
+         */
+        const waves = await wavePortalContract.getAllWaves();
+
+
+        /*
+         * We only need address, timestamp, and message in our UI so let's
+         * pick those out
+         */
+        let wavesCleaned = [];
+        waves.forEach(wave => {
+          wavesCleaned.push({
+            address: wave.waver,
+            timestamp: new Date(wave.timestamp * 1000),
+            message: wave.message
+          });
+        });
+
+        /*
+         * Store our data in React State
+         */
+        setAllWaves(wavesCleaned);
+      } else {
+        console.log("Ethereum object doesn't exist!")
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  })
 
   const checkIfWalletIsConnected = async () => {
     try {
@@ -24,7 +67,6 @@ export default function App() {
 
       if (accounts.length !== 0) {
         const account = accounts[0];
-        console.log("Found an authorized account:", account);
         setCurrentAccount(account)
       } else {
         console.log("No authorized account found")
@@ -45,7 +87,6 @@ export default function App() {
 
       const accounts = await ethereum.request({ method: "eth_requestAccounts" });
 
-      console.log("Connected", accounts[0]);
       setCurrentAccount(accounts[0]);
     } catch (error) {
       console.log(error)
@@ -53,11 +94,19 @@ export default function App() {
   }
 
   useEffect(() => {
-    checkIfWalletIsConnected();
+    checkIfWalletIsConnected()
   }, [])
+
+  useEffect(() => {
+    if (currentAccount) {
+      getAllWaves()
+    }
+  }, [currentAccount, getAllWaves])
 
   const wave = async () => {
     try {
+      if (!msg) return
+
       const { ethereum } = window;
 
       if (ethereum) {
@@ -68,7 +117,7 @@ export default function App() {
         let count = await wavePortalContract.getTotalWaves();
         console.log("Retrieved total wave count...", count.toNumber());
 
-        const waveTxn = await wavePortalContract.wave();
+        const waveTxn = await wavePortalContract.wave(msg);
         console.log("mining....", waveTxn.hash)
 
         await waveTxn.wait();
@@ -77,6 +126,7 @@ export default function App() {
         count = await wavePortalContract.getTotalWaves();
         console.log("Retrieved total wave count...", count.toNumber());
         
+        setTotalWaves(count.toNumber())
       } else {
         console.log("Ethereum object doesn't exist!");
       }
@@ -96,6 +146,8 @@ export default function App() {
         I am Matheus and I worked on self-driving cars so that's pretty cool right? Connect your Ethereum wallet and wave at me!
         </div>
 
+        <Input onChange={ev => setMsg(ev.target.value)} />
+        
         <Button onClick={wave}>
           Wave at Me
         </Button>
@@ -105,6 +157,16 @@ export default function App() {
             Connect Wallet
           </Button>
         )}
+
+        {allWaves.map((wave, index) => {
+          return (
+            <div key={index} style={{ backgroundColor: "#ddd", marginTop: "16px", padding: "8px", color: "#000" }}>
+              <div>Address: {wave.address}</div>
+              <div>Time: {wave.timestamp.toString()}</div>
+              <div>Message: {wave.message}</div>
+            </div>)
+        })}
+        <p style={{margin: '16px', fontWeight: 'bold'}}>Total Waves: {totalWaves}</p>
       </div>
     </div>
   );
