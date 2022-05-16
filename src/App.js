@@ -11,7 +11,7 @@ export default function App() {
   const [totalWaves, setTotalWaves] = useState(0)
   const [msg, setMsg] = useState("")
 
-  const contractAddress = "0xE8f8bB0d980E506C696d34bAfCb75066BA8fd4FC"
+  const contractAddress = "0x515958032Bfd72319871b37e94E0e190492E4Fd4"
   const contractABI = abi.abi;
 
   const getAllWaves = useCallback(async () => {
@@ -117,7 +117,7 @@ export default function App() {
         let count = await wavePortalContract.getTotalWaves();
         console.log("Retrieved total wave count...", count.toNumber());
 
-        const waveTxn = await wavePortalContract.wave(msg);
+        const waveTxn = await wavePortalContract.wave(msg, { gasLimit: 300000 });
         console.log("mining....", waveTxn.hash)
 
         await waveTxn.wait();
@@ -135,6 +135,39 @@ export default function App() {
     }
   }
   
+  /**
+   * Listen in for emitter events!
+   */
+  useEffect(() => {
+    let wavePortalContract;
+
+    const onNewWave = (from, timestamp, message) => {
+      console.log("NewWave", from, timestamp, message);
+      setAllWaves(prevState => [
+        ...prevState,
+        {
+          address: from,
+          timestamp: new Date(timestamp * 1000),
+          message: message,
+        },
+      ]);
+    };
+
+    if (window.ethereum) {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+
+      wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+      wavePortalContract.on("NewWave", onNewWave);
+    }
+
+    return () => {
+      if (wavePortalContract) {
+        wavePortalContract.off("NewWave", onNewWave);
+      }
+    };
+  }, [contractABI]);
+
   return (
     <div className="mainContainer">
       <div className="dataContainer">
